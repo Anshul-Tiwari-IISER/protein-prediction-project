@@ -64,7 +64,10 @@ class BiLSTM_Attention(nn.Module):
 
         # Final classification
         out = self.fc(context_vector)
-        return out
+
+        # --- THIS IS THE ONLY CHANGE ---
+        # Return both the prediction and the attention weights
+        return out, attention_weights
 
 # --- 4. TRAINING LOGIC ---
 if __name__ == '__main__':

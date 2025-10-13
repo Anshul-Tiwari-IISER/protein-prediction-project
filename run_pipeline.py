@@ -3,15 +3,17 @@ import torch.nn as nn
 import numpy as np
 import sys
 import os
+import argparse # <-- NEW: Import the argument parser
 
 # Add the stage2_localization subfolder to the path
 sys.path.append(os.path.abspath('stage2_localization'))
 
 from inference_end_to_end import run_stage1_prediction
-from train_model import BiLSTM_Attention # <-- This line is updated
+from train_model import BiLSTM_Attention
 
-# --- 1. DEFINE YOUR INPUT PROTEIN SEQUENCE ---
-my_protein_sequence = "MTEITAAMVKELRESTGAGMMDCKNALSETNGDFDKAVQLLREKGLGKAAKKADRLAAEG"
+# --- NEW: Setup the command-line argument parser ---
+parser = argparse.ArgumentParser(description="Run the full protein prediction pipeline.")
+parser.add_argument("sequence", type=str, help="The protein amino acid sequence to analyze.")
 
 # --- 2. DEFINE HELPER FUNCTIONS FOR STAGE 2 ---
 def preprocess_for_stage2(sequence: str, vocab: dict, max_len: int):
@@ -23,13 +25,13 @@ def preprocess_for_stage2(sequence: str, vocab: dict, max_len: int):
     return torch.tensor(encoded, dtype=torch.long).unsqueeze(0)
 
 # --- 3. MAIN PIPELINE LOGIC ---
-def main():
+def main(protein_sequence): # <-- UPDATED: Accepts the sequence as an argument
     print("--- Starting Integrated Protein Prediction Pipeline ---")
-    print(f"Input Sequence: {my_protein_sequence[:50]}...")
+    print(f"Input Sequence: {protein_sequence[:50]}...")
 
     # --- STAGE 1: PREDICT UBIQUITINATION ---
     print("\n--- Running Stage 1: Ubiquitination Prediction ---")
-    is_ubiquitinated = run_stage1_prediction(my_protein_sequence)
+    is_ubiquitinated = run_stage1_prediction(protein_sequence)
 
     if not is_ubiquitinated:
         print("\nPIPELINE RESULT: The protein is NOT predicted to be ubiquitinated.")
@@ -56,19 +58,19 @@ def main():
     vocab = {char: i + 1 for i, char in enumerate(amino_acids)}
     vocab['<pad>'] = 0
 
-    # Use the new model definition
-    model = BiLSTM_Attention(vocab_size, embedding_dim, hidden_dim, num_classes).to(device) # <-- This line is updated
+    model = BiLSTM_Attention(vocab_size, embedding_dim, hidden_dim, num_classes).to(device)
     model.load_state_dict(torch.load(model_path, map_location=device))
     model.eval()
 
-    numerical_sequence = preprocess_for_stage2(my_protein_sequence, vocab, max_sequence_length).to(device)
+    numerical_sequence = preprocess_for_stage2(protein_sequence, vocab, max_sequence_length).to(device)
 
     with torch.no_grad():
-        output = model(numerical_sequence)
+        output, _ = model(numerical_sequence) # Updated model returns two values
         _, predicted_id = torch.max(output.data, 1)
         location_name = location_mapping.get(predicted_id.item(), "Unknown")
 
     print(f"\nPIPELINE RESULT: The protein is likely located in the '{location_name}'.")
 
 if __name__ == '__main__':
-    main()
+    args = parser.parse_args() # <-- NEW: Get the arguments from the command line
+    main(args.sequence) # <-- UPDATED: Pass the sequence to the main function
