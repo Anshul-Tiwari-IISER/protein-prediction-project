@@ -1,50 +1,74 @@
-# run_pipeline.py
-
-# --- Import necessary functions and classes ---
-# You'll need to adjust these paths
-from demo.inference_end_to_end import run_stage1_prediction  # We will need to modify this script slightly
-from stage2_localization.train_model import ProteinLSTM, ProteinDataset  # Reuse our model definition
 import torch
+import torch.nn as nn
+import numpy as np
+import sys
+import os
+
+# Add the stage2_localization subfolder to the path
+sys.path.append(os.path.abspath('stage2_localization'))
+
+from inference_end_to_end import run_stage1_prediction
+from train_model import BiLSTM_Attention # <-- This line is updated
 
 # --- 1. DEFINE YOUR INPUT PROTEIN SEQUENCE ---
 my_protein_sequence = "MTEITAAMVKELRESTGAGMMDCKNALSETNGDFDKAVQLLREKGLGKAAKKADRLAAEG"
 
+# --- 2. DEFINE HELPER FUNCTIONS FOR STAGE 2 ---
+def preprocess_for_stage2(sequence: str, vocab: dict, max_len: int):
+    encoded = [vocab.get(char, 0) for char in sequence]
+    if len(encoded) > max_len:
+        encoded = encoded[:max_len]
+    else:
+        encoded = encoded + [vocab['<pad>']] * (max_len - len(encoded))
+    return torch.tensor(encoded, dtype=torch.long).unsqueeze(0)
 
+# --- 3. MAIN PIPELINE LOGIC ---
 def main():
+    print("--- Starting Integrated Protein Prediction Pipeline ---")
+    print(f"Input Sequence: {my_protein_sequence[:50]}...")
+
     # --- STAGE 1: PREDICT UBIQUITINATION ---
-    print("--- Running Stage 1: Ubiquitination Prediction ---")
-    # We need to adapt the Stage 1 script to be callable and return a result
-    # For now, let's assume it returns True if ubiquitinated
-    is_ubiquitinated = run_stage1_prediction(my_protein_sequence)  # This function needs to be created
+    print("\n--- Running Stage 1: Ubiquitination Prediction ---")
+    is_ubiquitinated = run_stage1_prediction(my_protein_sequence)
 
     if not is_ubiquitinated:
-        print("\nResult: The protein is NOT predicted to be ubiquitinated.")
-        return  # Stop the pipeline
+        print("\nPIPELINE RESULT: The protein is NOT predicted to be ubiquitinated.")
+        return
 
     print("\nResult: The protein IS predicted to be ubiquitinated.")
 
     # --- STAGE 2: PREDICT LOCALIZATION ---
     print("\n--- Running Stage 2: Subcellular Localization Prediction ---")
 
-    # Load the trained Stage 2 model
-    model = ProteinLSTM(...)  # Initialize with the correct parameters
-    model.load_state_dict(torch.load('stage2_localization/best_location_model.pth', map_location=torch.device('cpu')))
+    device = torch.device('cpu')
+    model_path = 'stage2_localization/best_location_model.pth'
+
+    # Model settings must match those used during training
+    vocab_size = 23
+    embedding_dim = 128
+    hidden_dim = 256
+    num_classes = 5
+    max_sequence_length = 1000
+
+    location_mapping = {0: 'Endoplasmic', 1: 'Golgi', 2: 'cytoplasm', 3: 'mitochondrion', 4: 'nucleus'}
+
+    amino_acids = ['A', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'K', 'L', 'M', 'N', 'P', 'Q', 'R', 'S', 'T', 'V', 'W', 'Y', '-', 'X', 'B', 'Z', 'J', 'U', 'O']
+    vocab = {char: i + 1 for i, char in enumerate(amino_acids)}
+    vocab['<pad>'] = 0
+
+    # Use the new model definition
+    model = BiLSTM_Attention(vocab_size, embedding_dim, hidden_dim, num_classes).to(device) # <-- This line is updated
+    model.load_state_dict(torch.load(model_path, map_location=device))
     model.eval()
 
-    # Preprocess the input sequence into the numerical format the model expects
-    # (This logic would be copied from your preprocess_data.py script)
-    numerical_sequence = preprocess_sequence_for_stage2(my_protein_sequence)
+    numerical_sequence = preprocess_for_stage2(my_protein_sequence, vocab, max_sequence_length).to(device)
 
-    # Make the prediction
     with torch.no_grad():
         output = model(numerical_sequence)
         _, predicted_id = torch.max(output.data, 1)
+        location_name = location_mapping.get(predicted_id.item(), "Unknown")
 
-    # Convert the predicted ID back to a location name (e.g., 0 -> 'nucleus')
-    location_name = convert_id_to_location(predicted_id.item())  # This function needs to be created
-
-    print(f"\nFINAL PREDICTION: The protein is likely located in the {location_name}.")
-
+    print(f"\nPIPELINE RESULT: The protein is likely located in the '{location_name}'.")
 
 if __name__ == '__main__':
     main()

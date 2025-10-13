@@ -1,9 +1,13 @@
 import pandas as pd
 from sklearn.model_selection import train_test_split
 import numpy as np
+import os
 
-# --- 1. SETTINGS ---
-input_csv_file = "master_protein_locations.csv"
+# --- 1. SETTINGS (Now with smarter path handling) ---
+# Get the directory where this script is located
+script_dir = os.path.dirname(os.path.abspath(__file__))
+# Construct the full path to the input CSV file
+input_csv_file = os.path.join(script_dir, "master_protein_locations.csv")
 max_sequence_length = 1000 # We will trim or pad sequences to this length
 
 # --- 2. THE SCRIPT LOGIC (No need to change) ---
@@ -61,8 +65,8 @@ print(f"Test set size: {len(test_df)}")
 
 # --- Save the new datasets ---
 # We only need the encoded sequence and the location ID for the model
-train_df[['sequence_encoded', 'location_id']].to_csv('train_data.csv', index=False)
-val_df[['sequence_encoded', 'location_id']].to_csv('validation_data.csv', index=False)
-test_df[['sequence_encoded', 'location_id']].to_csv('test_data.csv', index=False)
+train_df[['sequence_encoded', 'location_id']].to_csv(os.path.join(script_dir, 'train_data.csv'), index=False)
+val_df[['sequence_encoded', 'location_id']].to_csv(os.path.join(script_dir, 'validation_data.csv'), index=False)
+test_df[['sequence_encoded', 'location_id']].to_csv(os.path.join(script_dir, 'test_data.csv'), index=False)
 
-print("\nSuccessfully created train_data.csv, validation_data.csv, and test_data.csv!")
+print("\nSuccessfully created train_data.csv, validation_data.csv, and test_data.csv in the stage2_localization folder!")

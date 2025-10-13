@@ -2,9 +2,13 @@ import os
 import pandas as pd
 from Bio import SeqIO
 
-# --- 1. SETTINGS ---
-data_folder = "."
-output_csv_file = "master_protein_locations.csv"
+# --- 1. SETTINGS (Now with smarter path handling) ---
+# Get the directory where this script is located
+script_dir = os.path.dirname(os.path.abspath(__file__))
+# Look for fasta files in the same directory as the script
+data_folder = script_dir
+# Save the output file in the same directory
+output_csv_file = os.path.join(script_dir, "master_protein_locations.csv")
 
 # --- 2. THE SCRIPT LOGIC (Now with balancing) ---
 all_proteins_by_location = {}
