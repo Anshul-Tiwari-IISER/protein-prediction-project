@@ -37,6 +37,7 @@ To run the full prediction pipeline on a sample protein, clone this repository a
 
 ```bash
 python run_pipeline.py "YOUR_SEQUENCE_HERE"
+```bash
 
 ## How to Run
 
