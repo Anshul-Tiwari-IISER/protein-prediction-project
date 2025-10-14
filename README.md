@@ -33,11 +33,10 @@ The final localization model was trained on a large-scale dataset of over 15,000
 - pandas, scikit-learn, BioPython
 
 ### Running the Pipeline
-To run the full prediction pipeline on a sample protein, clone this repository and execute the following command in your terminal:
+To run the full prediction pipeline on a sample protein, clone this repository and execute the following command in your terminal, replacing `"YOUR_SEQUENCE_HERE"` with your protein sequence:
 
 ```bash
-python run_pipeline.py
+python run_pipeline.py "YOUR_SEQUENCE_HERE"
 
-## Deployment Note
-
-The full application was built and tested locally using Streamlit. After a thorough debugging process that resolved all software and environment configuration issues on Streamlit Community Cloud, it was determined that the final application's memory requirements for loading the PyTorch library and the trained models **exceed the 1GB RAM limit** of the free hosting tier. This confirms the scale and complexity of the AI solution.
+Deployment Note
+The full application was built and tested locally using Streamlit. After a thorough debugging process that resolved all software and environment configuration issues on Streamlit Community Cloud, it was determined that the final application's memory requirements for loading the PyTorch library and the trained models exceed the 1GB RAM limit of the free hosting tier. This confirms the scale and complexity of the AI solution.
