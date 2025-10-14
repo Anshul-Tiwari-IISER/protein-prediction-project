@@ -38,5 +38,5 @@ To run the full prediction pipeline on a sample protein, clone this repository a
 ```bash
 python run_pipeline.py
 
-### Deployment Note
+## Deployment Note
 The full application was built and tested locally using Streamlit. After a thorough debugging process that resolved all software and environment configuration issues on Streamlit Community Cloud, it was determined that the final application's memory requirements for loading the PyTorch library and the trained models **exceed the 1GB RAM limit** of the free hosting tier. This confirms the scale and complexity of the AI solution.
