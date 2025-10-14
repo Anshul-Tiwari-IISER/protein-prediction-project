@@ -37,11 +37,3 @@ To run the full prediction pipeline on a sample protein, clone this repository a
 
 ```bash
 python run_pipeline.py "YOUR_SEQUENCE_HERE"
-```bash
-
-## How to Run
-
-### Prerequisites
-- Python 3.10+
-- PyTorch (with CUDA for GPU support)
-- pandas, scikit-learn, BioPython
